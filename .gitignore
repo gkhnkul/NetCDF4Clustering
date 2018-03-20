@@ -102,3 +102,5 @@ ENV/
 
 # Data files
 *.cdf
+
+.DS_Store
