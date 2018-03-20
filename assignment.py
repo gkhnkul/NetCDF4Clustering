@@ -13,15 +13,6 @@ from sklearn import preprocessing
 from netCDF4 import MFDataset
 from netCDF4 import Dataset
 
-
-
-def walktree(top):
-	values = top.groups.values()
-	yield values
-	for value in top.groups.values():
-		for children in walktree(value):
-			yield children
-
 	
 def KMeanClusteringNormalized(finalIntervalAthPressure, finalIntervalRH, finalIntervalMeanTemp, finalIntervalTime, dayTime):
 	
@@ -149,7 +140,7 @@ def getK(data):
 		labels = kmeans.predict(data)
 		centroids = kmeans.cluster_centers_
 	
-		sil = silhouette_score(data, labels, metric='cosine')
+		sil = silhouette_score(data, labels, metric='euclidean')
 		print "For number of clusters: " + str(k) + " average silhouette score:" + str(sil)
 		if highest < sil:
 			highest = sil
@@ -163,7 +154,6 @@ def addSeconds(inputTime, secs):
 	currentTime = inputTime + timedelta(seconds=secs)
 	
 	return currentTime
-	
 	
 def importDataFromFile(fileName, timeIndex):
 	f = MFDataset(fileName)
@@ -320,8 +310,6 @@ def main():
 	KMeanClustering(finalIntervalAthPressure, finalIntervalRH, finalIntervalMeanTemp, finalIntervalTime, finalDayTime)
 	
 	KMeanClusteringNormalized(finalIntervalAthPressure, finalIntervalRH, finalIntervalMeanTemp, finalIntervalTime, finalDayTime)
-	
-	
 	
 main()
 

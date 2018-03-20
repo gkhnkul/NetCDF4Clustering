@@ -1,0 +1,17 @@
+## Methodology
+
+The basic workflow of the system is as follows:
+
+(1) The program reads each input files one by one
+(2) The files are used to compute mean values for 5 seconds
+(3) The output file is created using this data
+(4) The clustering operation is performed for raw data
+	(a) k is computed using silhouette coefficient for k values from 2 to 30
+	(b) The output is created as using the k score with the highest k value
+(5) Another clustering operation is performed with normalized data
+	(a) k is computed using silhouette coefficient for k values from 2 to 30
+	(b) The output is created as using the k score with the highest k value
+	
+## Results
+
+I used silhouette coefficient to compute the ideal value of k. For every data point in the dataset, its silhouette coefficent is a measure of how similar it is to its own cluster in comparison to other clusters. The ideal value computed while using raw data for k is 7. When inspected these values usually corresponds to clusters of time values, however, some clusters still included time values that were very different. This problem is due to the data being not normalized. Namely, the range of atmospheric pressure and mean temperature are very different, which reduces the effect of atmospheric pressure considerably when computing the default distance metric (euclidean distance) in Sklearn kmeans clustering library. Instead, I normalized each data array to reduce the effect of different value ranges. The ideal cluster size k becomes 3 clusters in this case. When inspected this clustering corresponds to 3 time frames in a day, roughly: night, morning-noon, and afternoon-evening with a lot less data points that should correspond to other clusters.
