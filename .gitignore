@@ -104,3 +104,4 @@ ENV/
 *.cdf
 
 .DS_Store
+*.pyc

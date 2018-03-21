@@ -13,7 +13,7 @@ from sklearn import preprocessing
 from netCDF4 import MFDataset
 from netCDF4 import Dataset
 
-	
+# this method performs KMeans clustering for normalized data
 def KMeanClusteringNormalized(finalIntervalAthPressure, finalIntervalRH, finalIntervalMeanTemp, finalIntervalTime, dayTime):
 	
 	print len(finalIntervalAthPressure)
@@ -30,14 +30,15 @@ def KMeanClusteringNormalized(finalIntervalAthPressure, finalIntervalRH, finalIn
     	'day_time' : dayTime
 	})
 	
+	#data normalization
 	df['athPressure'] = (df['athPressure'] - df['athPressure'].mean()) / (df['athPressure'].max() - df['athPressure'].min())
 	df['rh'] = (df['rh'] - df['rh'].mean()) / (df['rh'].max() - df['rh'].min())
 	df['temp'] = (df['temp'] - df['temp'].mean()) / (df['temp'].max() - df['temp'].min())
 	
-	#df = preprocessData(df)
-	
+	#perform clustering for only athPressure, rh and temp values
 	X = np.matrix(zip(df['athPressure'].values, df['rh'].values, df['temp'].values))
 	
+	#get the ideal K
 	k = getK(X)
 	
 	print "Using " + str(k) + " clusters"
@@ -66,6 +67,7 @@ def KMeanClusteringNormalized(finalIntervalAthPressure, finalIntervalRH, finalIn
 	#	ax3.scatter(*centroid, color=colmap[idx+1])
 	#ax.scatter(C[:, 0], C[:, 1], C[:, 2], marker='*', c='#050505', s=1000)
 	
+	#plot figure
 	fig = plt.figure()
 	ax = Axes3D(fig)
 	ax.scatter(df['athPressure'], df['rh'], df["temp"], c=colors)
@@ -75,6 +77,7 @@ def KMeanClusteringNormalized(finalIntervalAthPressure, finalIntervalRH, finalIn
 
 	plt.show()
 	
+#this method performs KMeans clustering for raw data
 def KMeanClustering(finalIntervalAthPressure, finalIntervalRH, finalIntervalMeanTemp, finalIntervalTime, dayTime):
 	
 	print len(finalIntervalAthPressure)
@@ -91,8 +94,10 @@ def KMeanClustering(finalIntervalAthPressure, finalIntervalRH, finalIntervalMean
     	'day_time' : dayTime
 	})
 	
+	#perform clustering for only athPressure, rh and temp values
 	X = np.matrix(zip(df['athPressure'].values, df['rh'].values, df['temp'].values))
 	
+	#get the ideal K value
 	k = getK(X)
 	
 	print "Using " + str(k) + " clusters"
@@ -130,6 +135,7 @@ def KMeanClustering(finalIntervalAthPressure, finalIntervalRH, finalIntervalMean
 
 	plt.show()
 	
+#this method finds the ideal K using silhouette coefficient
 def getK(data):
 	retVal = 0
 	highest = 0
@@ -147,14 +153,15 @@ def getK(data):
 			retVal = k
 	return retVal
     	
-            
+#this method adds a given number of seconds to a given datetime data        
 def addSeconds(inputTime, secs):
 	date = inputTime.date()
 	time = inputTime.time()
 	currentTime = inputTime + timedelta(seconds=secs)
 	
 	return currentTime
-	
+
+#this method imports the information from a given CDF file
 def importDataFromFile(fileName, timeIndex):
 	f = MFDataset(fileName)
 	
@@ -164,6 +171,7 @@ def importDataFromFile(fileName, timeIndex):
 	capturedDateString = re.search(r'\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}', historyString)
 	exactTime = datetime.strptime(capturedDateString.group(), '%Y-%m-%d %H:%M:%S')
 
+	#extract relevant data
 	athPressure = f.variables["atmos_pressure"][:]
 	rh = f.variables["rh_mean"][:]
 	meanTemp = f.variables["temp_mean"][:]
@@ -171,11 +179,8 @@ def importDataFromFile(fileName, timeIndex):
 	fiveSecondTime = everySecondTime[0::5]
 	updatedTime = []
 	dayTime = []
-	
-	
-	#for i in range(len(everySecondTime)):
-	#	addSeconds(exactTime, everySecondTime[i])
 
+	# get averages for 5 seconds
 	for p in fiveSecondTime:
 		if len(timeIndex) > 0:
 			updatedTime.append(timeIndex[-1] + 300 + p)
@@ -190,6 +195,7 @@ def importDataFromFile(fileName, timeIndex):
 	
 	return updatedAthPressure, updatedRH, updatedMeanTemp, updatedTime, dayTime
 	
+#this method creates the output avg CDF file
 def createCDFFile(finalIntervalAthPressure, finalIntervalRH, finalIntervalMeanTemp, finalIntervalTime):
 	
 	f = MFDataset("sgpmetE13.b1.20180101.000000.cdf")
@@ -271,15 +277,26 @@ def createCDFFile(finalIntervalAthPressure, finalIntervalRH, finalIntervalMeanTe
 	
 	dataset.close()
 	
+#this method reads the output avg CDF file
 def readCDFData():
-	finalData = Dataset("sgpmetavgE13.b1.20180101.000000.cdf", "r", format="NETCDF4")
+	try:
+		finalData = Dataset("sgpmetavgE13.b1.20180101.000000.cdf", "r", format="NETCDF4")
 			
-	athPressure = finalData.variables["atmospheric_pressure"][:]
-	rh = finalData.variables["relative_humidity"][:]
-	meanTemp = finalData.variables["mean_temperature"][:]
-	time = finalData.variables["time"][:]
+		athPressure = finalData.variables["atmospheric_pressure"][:]
+		rh = finalData.variables["relative_humidity"][:]
+		meanTemp = finalData.variables["mean_temperature"][:]
+		time = finalData.variables["time"][:]
+		
+		print len(athPressure)
+		print len(rh)
+		print len(meanTemp)
+		print len(time)
 	
-	finalData.close()
+		finalData.close()
+		return True
+	except:
+		print "Could not find the avg file."
+		return False
 
 def main():
 	
@@ -304,8 +321,6 @@ def main():
 		i += 1
 	
 	createCDFFile(finalIntervalAthPressure, finalIntervalRH, finalIntervalMeanTemp, finalIntervalTime)
-	
-	#readCDFData()
 	
 	KMeanClustering(finalIntervalAthPressure, finalIntervalRH, finalIntervalMeanTemp, finalIntervalTime, finalDayTime)
 	
